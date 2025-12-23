@@ -1436,6 +1436,15 @@ while running:
             slot_list.set_rect(canvas_rect)
             preset_list.set_rect(canvas_rect)
 
+        if anchor_select.opened and event.type in (
+            pygame.MOUSEBUTTONDOWN,
+            pygame.MOUSEBUTTONUP,
+            pygame.MOUSEMOTION,
+            pygame.KEYDOWN,
+        ):
+            anchor_select.handle_event(event)
+            continue
+
         if state["mode"] in ("samira", "penta"):
             slot_list.handle_event(event)
         elif state["mode"] == "preset":
