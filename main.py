@@ -427,6 +427,76 @@ class Slider(UIElement):
             surf.blit(hint, (self.rect.x, self.rect.y + 52))
 
 # =============================
+# Select box
+# =============================
+class Select(UIElement):
+    def __init__(self, rect, label, options, on_change=None):
+        super().__init__(rect)
+        self.label = label
+        self.options = options
+        self.on_change = on_change
+        self.selected = 0
+        self.opened = False
+        self.option_rects = []
+
+    def set_index(self, idx):
+        if len(self.options) == 0:
+            self.selected = 0
+            return
+        self.selected = int(clamp(idx, 0, len(self.options) - 1))
+
+    def handle_event(self, event):
+        if not self.enabled:
+            return
+
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.opened = False
+            return
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.opened:
+                for i, rect in enumerate(self.option_rects):
+                    if rect.collidepoint(event.pos):
+                        self.selected = i
+                        if self.on_change:
+                            self.on_change(i)
+                        self.opened = False
+                        return
+                if not self.rect.collidepoint(event.pos):
+                    self.opened = False
+                    return
+
+            if self.rect.collidepoint(event.pos):
+                self.opened = not self.opened
+
+    def draw(self, surf):
+        label = FONT_14.render(self.label, True, THEME.subtext)
+        surf.blit(label, (self.rect.x, self.rect.y))
+
+        box_h = self.rect.h - 20
+        box_rect = pygame.Rect(self.rect.x, self.rect.y + 18, self.rect.w, box_h)
+        draw_round_rect(surf, box_rect, THEME.card, radius=10, border=1, border_color=THEME.stroke)
+
+        sel_txt = self.options[self.selected] if self.options else ""
+        val = FONT_14.render(sel_txt, True, THEME.text)
+        surf.blit(val, (box_rect.x + 12, box_rect.centery - val.get_height() // 2))
+
+        arrow = FONT_14.render("▼" if not self.opened else "▲", True, THEME.subtext)
+        surf.blit(arrow, (box_rect.right - arrow.get_width() - 12, box_rect.centery - arrow.get_height() // 2))
+
+        self.option_rects = []
+        if self.opened and self.options:
+            opt_y = box_rect.bottom + 6
+            for i, opt in enumerate(self.options):
+                orect = pygame.Rect(box_rect.x, opt_y, box_rect.w, box_h)
+                bg = lerp_color(THEME.card, THEME.accent, 0.12) if i == self.selected else THEME.card
+                draw_round_rect(surf, orect, bg, radius=10, border=1, border_color=THEME.stroke)
+                t = FONT_14.render(opt, True, THEME.text)
+                surf.blit(t, (orect.x + 12, orect.centery - t.get_height() // 2))
+                self.option_rects.append(orect)
+                opt_y += box_h + 6
+
+# =============================
 # SoundSlotList
 # =============================
 class SoundSlotList(UIElement):
@@ -663,11 +733,21 @@ TEMPLATES = {
     "None": [r"templates/None.png", r"templates/None(cooltime).png"],
 }
 
-anchor_x, anchor_y = 1720, 1335
+anchor_presets = [
+    {"label": "3440 x 1400", "anchor": (1720, 1335)},
+    {"label": "1980 x 1080", "anchor": (990, 1001)},
+]
+
+anchor_x, anchor_y = anchor_presets[0]["anchor"]
+anchor_select = None
 ROI_W, ROI_H = 90, 90
-ROI_X = anchor_x - ROI_W // 2
-ROI_Y = anchor_y - ROI_H // 2
-monitor = {"left": ROI_X, "top": ROI_Y, "width": ROI_W, "height": ROI_H}
+
+def compute_monitor(ax, ay):
+    rx = int(ax - ROI_W // 2)
+    ry = int(ay - ROI_H // 2)
+    return {"left": rx, "top": ry, "width": ROI_W, "height": ROI_H}
+
+monitor = compute_monitor(anchor_x, anchor_y)
 
 tmpl_imgs = {g: [] for g in TEMPLATES.keys()}
 for grade, paths in TEMPLATES.items():
@@ -733,6 +813,7 @@ class DetectionController:
         self.running = True
         self.debug_window = True
         self.lock = threading.Lock()
+        self.monitor = monitor
 
 det_ctl = DetectionController()
 
@@ -857,6 +938,7 @@ def detection_thread_main():
             if not det_ctl.running:
                 break
             dbg_on = det_ctl.debug_window
+            monitor_local = det_ctl.monitor
 
         now = time.time()
 
@@ -888,7 +970,7 @@ def detection_thread_main():
             time.sleep(0.05)
             continue
 
-        frame = np.array(sct.grab(monitor))
+        frame = np.array(sct.grab(monitor_local))
         frame_bgr = frame[:, :, :3]
         roi_gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
 
@@ -1038,6 +1120,7 @@ state = {
     "last_preset": None,
     "debug_window": True,
     "samira_active": False,
+    "anchor_index": 0,
 }
 
 def set_volume(v):
@@ -1047,6 +1130,23 @@ def set_volume(v):
     # 덕킹 중이면 반영하지 않고, 덕킹 해제 시 복귀
     if not _ducking:
         set_music_volume(state["volume"])
+
+def set_anchor_index(idx, update_ui=True):
+    global anchor_x, anchor_y, monitor
+
+    if len(anchor_presets) == 0:
+        return
+
+    idx = int(clamp(idx, 0, len(anchor_presets) - 1))
+    state["anchor_index"] = idx
+    anchor_x, anchor_y = anchor_presets[idx]["anchor"]
+    monitor = compute_monitor(anchor_x, anchor_y)
+
+    with det_ctl.lock:
+        det_ctl.monitor = monitor
+
+    if update_ui and anchor_select is not None:
+        anchor_select.set_index(idx)
 
 samira_slots = [
     {"title": "S", "path": ""},
@@ -1065,6 +1165,7 @@ def export_tool_config():
         "version": 2,
         "volume": state["volume"],
         "debug_window": state["debug_window"],
+        "anchor_index": state["anchor_index"],
         "samira": [{"title": s["title"], "path": s.get("path", "")} for s in samira_slots],
         "penta": [{"title": s["title"], "path": s.get("path", "")} for s in penta_slots],
     }
@@ -1084,6 +1185,12 @@ def apply_tool_config(data):
         state["debug_window"] = dbg
         with det_ctl.lock:
             det_ctl.debug_window = dbg
+
+    ai = data.get("anchor_index", state["anchor_index"])
+    if isinstance(ai, (int, float)):
+        set_anchor_index(int(ai), update_ui=False)
+        if anchor_select is not None:
+            anchor_select.set_index(state["anchor_index"])
 
     s_list = data.get("samira", [])
     if isinstance(s_list, list) and len(s_list) > 0:
@@ -1114,7 +1221,7 @@ def apply_preset_data(data, preset_name=None):
 # =============================
 def build_layout(w, h):
     margin = 20
-    bottom_h = 110
+    bottom_h = 150
     sidebar_w = 280
 
     top_area = pygame.Rect(margin, margin, w - margin * 2, h - margin * 2 - bottom_h)
@@ -1154,14 +1261,15 @@ def build_layout(w, h):
     btn_presets = pygame.Rect(bx, btn_save.y - gap - btn_h, bw, btn_h)
     btn_dbg = pygame.Rect(bx, btn_presets.y - gap - btn_h, bw, btn_h)
 
-    sld = pygame.Rect(bottom_rect.x + 20, bottom_rect.y + 18, bottom_rect.w - 40, 50)
+    sel_anchor = pygame.Rect(bottom_rect.x + 20, bottom_rect.y + 16, 260, 46)
+    sld = pygame.Rect(bottom_rect.x + 20, sel_anchor.bottom + 12, bottom_rect.w - 40, 50)
 
-    return canvas_rect, sidebar_rect, bottom_rect, btn_samira, btn_penta, btn_dbg, btn_presets, btn_save, btn_load, sld
+    return canvas_rect, sidebar_rect, bottom_rect, btn_samira, btn_penta, btn_dbg, btn_presets, btn_save, btn_load, sel_anchor, sld
 
 # =============================
 # UI create
 # =============================
-canvas_rect, sidebar_rect, bottom_rect, r_samira, r_penta, r_dbg, r_presets, r_save, r_load, r_sld = build_layout(W, H)
+canvas_rect, sidebar_rect, bottom_rect, r_samira, r_penta, r_dbg, r_presets, r_save, r_load, r_anchor, r_sld = build_layout(W, H)
 
 def on_slot_play(slot):
     # ✅ 미리듣기: SFX 채널 + 덕킹
@@ -1210,8 +1318,14 @@ btn_open_presets= Button(r_presets,"프리셋", on_click=open_presets)
 btn_save        = Button(r_save,   "저장", on_click=save_tool_json)
 btn_load        = Button(r_load,   "불러오기", on_click=load_tool_json)
 
+def on_anchor_changed(idx):
+    set_anchor_index(idx, update_ui=False)
+
+anchor_select = Select(r_anchor, "앵커(해상도)", [p["label"] for p in anchor_presets], on_change=on_anchor_changed)
+anchor_select.set_index(state["anchor_index"])
+set_anchor_index(state["anchor_index"], update_ui=False)
 sld_volume = Slider(r_sld, "Volume", 0, 100, state["volume"], on_change=set_volume)
-ui = [btn_open_samira, btn_open_penta, btn_debug, btn_open_presets, btn_save, btn_load, sld_volume]
+ui = [btn_open_samira, btn_open_penta, btn_debug, btn_open_presets, btn_save, btn_load, anchor_select, sld_volume]
 
 # 시작 볼륨 적용
 set_music_volume(state["volume"])
@@ -1308,7 +1422,7 @@ while running:
             W, H = event.w, event.h
             screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
 
-            canvas_rect, sidebar_rect, bottom_rect, r_samira, r_penta, r_dbg, r_presets, r_save, r_load, r_sld = build_layout(W, H)
+            canvas_rect, sidebar_rect, bottom_rect, r_samira, r_penta, r_dbg, r_presets, r_save, r_load, r_anchor, r_sld = build_layout(W, H)
 
             btn_open_samira.set_rect(r_samira)
             btn_open_penta.set_rect(r_penta)
@@ -1316,10 +1430,20 @@ while running:
             btn_open_presets.set_rect(r_presets)
             btn_save.set_rect(r_save)
             btn_load.set_rect(r_load)
+            anchor_select.set_rect(r_anchor)
             sld_volume.set_rect(r_sld)
 
             slot_list.set_rect(canvas_rect)
             preset_list.set_rect(canvas_rect)
+
+        if anchor_select.opened and event.type in (
+            pygame.MOUSEBUTTONDOWN,
+            pygame.MOUSEBUTTONUP,
+            pygame.MOUSEMOTION,
+            pygame.KEYDOWN,
+        ):
+            anchor_select.handle_event(event)
+            continue
 
         if state["mode"] in ("samira", "penta"):
             slot_list.handle_event(event)
@@ -1368,6 +1492,7 @@ while running:
     btn_load.draw(screen)
 
     draw_shadow_card(screen, bottom_rect, THEME.panel, radius=16, shadow_alpha=90)
+    anchor_select.draw(screen)
     sld_volume.draw(screen)
 
     if state["last_preset"]:
