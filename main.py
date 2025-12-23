@@ -758,8 +758,8 @@ TEMPLATES = {
 }
 
 anchor_presets = [
-    {"label": "3440 x 1400", "anchor": (1720, 1335)},
-    {"label": "1980 x 1080", "anchor": (990, 1001)},
+    {"label": "3440 x 1440", "anchor": (1720, 1335)},
+    {"label": "1920 x 1080", "anchor": (990, 1001)},
 ]
 
 anchor_x, anchor_y = anchor_presets[0]["anchor"]
