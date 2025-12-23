@@ -758,8 +758,29 @@ TEMPLATES = {
 }
 
 anchor_presets = [
+    {"label": "1024 x 768",  "anchor": (512, 712),   "resolution": (1024, 768)},
+    {"label": "1152 x 864",  "anchor": (576, 801),   "resolution": (1152, 864)},
+    {"label": "1280 x 720",  "anchor": (640, 668),   "resolution": (1280, 720)},
+    {"label": "1280 x 768",  "anchor": (640, 712),   "resolution": (1280, 768)},
+    {"label": "1280 x 800",  "anchor": (640, 742),   "resolution": (1280, 800)},
+    {"label": "1280 x 960",  "anchor": (640, 890),   "resolution": (1280, 960)},
+    {"label": "1280 x 1024", "anchor": (640, 949),   "resolution": (1280, 1024)},
+    {"label": "1360 x 768",  "anchor": (680, 712),   "resolution": (1360, 768)},
+    {"label": "1366 x 768",  "anchor": (683, 712),   "resolution": (1366, 768)},
+    {"label": "1440 x 900",  "anchor": (720, 834),   "resolution": (1440, 900)},
+    {"label": "1440 x 1080", "anchor": (720, 1001),  "resolution": (1440, 1080)},
+    {"label": "1600 x 900",  "anchor": (800, 834),   "resolution": (1600, 900)},
+    {"label": "1600 x 1024", "anchor": (800, 949),   "resolution": (1600, 1024)},
+    {"label": "1600 x 1200", "anchor": (800, 1112),  "resolution": (1600, 1200)},
+    {"label": "1680 x 1050", "anchor": (840, 973),   "resolution": (1680, 1050)},
+    {"label": "1920 x 1080", "anchor": (960, 1001),  "resolution": (1920, 1080)},
+    {"label": "1920 x 1200", "anchor": (960, 1112),  "resolution": (1920, 1200)},
+    {"label": "1920 x 1440", "anchor": (960, 1335),  "resolution": (1920, 1440)},
+    {"label": "2048 x 1536", "anchor": (1024, 1424), "resolution": (2048, 1536)},
+    {"label": "2560 x 1440", "anchor": (1280, 1335), "resolution": (2560, 1440)},
+    {"label": "2560 x 1600", "anchor": (1280, 1483), "resolution": (2560, 1600)},
     {"label": "3440 x 1440", "anchor": (1720, 1335), "resolution": (3440, 1440)},
-    {"label": "1920 x 1080", "anchor": (990, 1001), "resolution": (1920, 1080)},
+    {"label": "3840 x 2160", "anchor": (1920, 2002), "resolution": (3840, 2160)},
 ]
 
 anchor_x, anchor_y = anchor_presets[0]["anchor"]
