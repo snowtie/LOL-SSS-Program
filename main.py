@@ -758,13 +758,15 @@ TEMPLATES = {
 }
 
 anchor_presets = [
-    {"label": "3440 x 1440", "anchor": (1720, 1335)},
-    {"label": "1920 x 1080", "anchor": (990, 1001)},
+    {"label": "3440 x 1440", "anchor": (1720, 1335), "resolution": (3440, 1440)},
+    {"label": "1920 x 1080", "anchor": (990, 1001), "resolution": (1920, 1080)},
 ]
 
 anchor_x, anchor_y = anchor_presets[0]["anchor"]
 anchor_select = None
-ROI_W, ROI_H = 90, 90
+ROI_W_BASE, ROI_H_BASE = 90, 90
+ROI_W, ROI_H = ROI_W_BASE, ROI_H_BASE
+TEMPLATE_BASE_RESOLUTION = (3440, 1440)
 
 def compute_monitor(ax, ay):
     rx = int(ax - ROI_W // 2)
@@ -773,13 +775,47 @@ def compute_monitor(ax, ay):
 
 monitor = compute_monitor(anchor_x, anchor_y)
 
-tmpl_imgs = {g: [] for g in TEMPLATES.keys()}
+tmpl_imgs_base = {g: [] for g in TEMPLATES.keys()}
 for grade, paths in TEMPLATES.items():
     for path in paths:
         img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
         if img is None:
             raise FileNotFoundError(f"템플릿 로드 실패: {grade} -> {path}")
-        tmpl_imgs[grade].append(img)
+        tmpl_imgs_base[grade].append(img)
+
+tmpl_imgs = {}
+
+
+def rebuild_templates(scale_factor):
+    global tmpl_imgs
+    new_tmpls = {}
+    for grade, tmpls in tmpl_imgs_base.items():
+        scaled_list = []
+        for tmpl in tmpls:
+            if scale_factor != 1.0:
+                new_w = max(1, int(round(tmpl.shape[1] * scale_factor)))
+                new_h = max(1, int(round(tmpl.shape[0] * scale_factor)))
+                scaled = cv2.resize(tmpl, (new_w, new_h), interpolation=cv2.INTER_AREA)
+            else:
+                scaled = tmpl
+            scaled_list.append(scaled)
+        new_tmpls[grade] = scaled_list
+
+    tmpl_imgs = new_tmpls
+
+
+rebuild_templates(1.0)
+
+
+def resolution_scale(resolution):
+    try:
+        rw, rh = resolution
+        bw, bh = TEMPLATE_BASE_RESOLUTION
+        if bh > 0:
+            return max(0.2, rh / bh)
+    except Exception:
+        pass
+    return 1.0
 
 def detect_grade_fn(roi_gray):
     best_grade = None
@@ -1156,15 +1192,24 @@ def set_volume(v):
         set_music_volume(state["volume"])
 
 def set_anchor_index(idx, update_ui=True):
-    global anchor_x, anchor_y, monitor
+    global anchor_x, anchor_y, monitor, ROI_W, ROI_H
 
     if len(anchor_presets) == 0:
         return
 
     idx = int(clamp(idx, 0, len(anchor_presets) - 1))
     state["anchor_index"] = idx
-    anchor_x, anchor_y = anchor_presets[idx]["anchor"]
+    preset = anchor_presets[idx]
+
+    anchor_x, anchor_y = preset["anchor"]
+
+    scale = resolution_scale(preset.get("resolution", TEMPLATE_BASE_RESOLUTION))
+    ROI_W = max(20, int(round(ROI_W_BASE * scale)))
+    ROI_H = max(20, int(round(ROI_H_BASE * scale)))
+
     monitor = compute_monitor(anchor_x, anchor_y)
+
+    rebuild_templates(scale)
 
     with det_ctl.lock:
         det_ctl.monitor = monitor
