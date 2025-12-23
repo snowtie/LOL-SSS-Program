@@ -45,10 +45,9 @@ def load_font(size):
     for name in ["Malgun Gothic", "AppleGothic", "NanumGothic", None]:
         try:
             return pygame.font.SysFont(name, size)
-        except Exception:
+        except:
             pass
     return pygame.font.SysFont(None, size)
-
 
 FONT_12 = load_font(12)
 FONT_14 = load_font(14)
@@ -60,24 +59,18 @@ FONT_16 = load_font(16)
 def clamp(v, a, b):
     return max(a, min(b, v))
 
-
 def lerp(a, b, t):
     return a + (b - a) * t
 
-
 def lerp_color(c1, c2, t):
-    return (
-        int(lerp(c1[0], c2[0], t)),
-        int(lerp(c1[1], c2[1], t)),
-        int(lerp(c1[2], c2[2], t)),
-    )
-
+    return (int(lerp(c1[0], c2[0], t)),
+            int(lerp(c1[1], c2[1], t)),
+            int(lerp(c1[2], c2[2], t)))
 
 def draw_round_rect(surf, rect, color, radius=10, border=0, border_color=(0, 0, 0)):
     pygame.draw.rect(surf, color, rect, border_radius=radius)
     if border > 0:
         pygame.draw.rect(surf, border_color, rect, width=border, border_radius=radius)
-
 
 def draw_shadow_card(surf, rect, fill, radius=12, shadow_alpha=90, shadow_offset=(0, 4)):
     shadow = pygame.Surface((rect.w + 20, rect.h + 20), pygame.SRCALPHA)
@@ -85,7 +78,6 @@ def draw_shadow_card(surf, rect, fill, radius=12, shadow_alpha=90, shadow_offset
     pygame.draw.rect(shadow, (0, 0, 0, shadow_alpha), srect, border_radius=radius)
     surf.blit(shadow, (rect.x - 10, rect.y - 10))
     draw_round_rect(surf, rect, fill, radius=radius)
-
 
 # =============================
 # Theme
@@ -100,7 +92,6 @@ class Theme:
     subtext: tuple = (165, 175, 190)
     accent: tuple = (120, 170, 255)
     danger: tuple = (255, 105, 105)
-
 
 THEME = Theme()
 
@@ -124,7 +115,6 @@ def pick_audio_file():
     root.destroy()
     return file_path
 
-
 def pick_json_save_path(default_name="tool_config.json"):
     root = tk.Tk()
     root.withdraw()
@@ -138,7 +128,6 @@ def pick_json_save_path(default_name="tool_config.json"):
     root.destroy()
     return file_path
 
-
 def pick_json_open_path(title="설정 JSON 불러오기"):
     root = tk.Tk()
     root.withdraw()
@@ -150,7 +139,6 @@ def pick_json_open_path(title="설정 JSON 불러오기"):
     root.destroy()
     return file_path
 
-
 def safe_read_json(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -158,7 +146,6 @@ def safe_read_json(path):
     except Exception as e:
         print("[ERROR] JSON 읽기 실패:", path, e)
         return None
-
 
 def safe_write_json(path, data):
     try:
@@ -171,24 +158,20 @@ def safe_write_json(path, data):
         print("[ERROR] JSON 저장 실패:", path, e)
         return False
 
-
 # =============================
 # Audio helpers
 # =============================
 def set_music_volume(vol_0_100):
     pygame.mixer.music.set_volume(clamp(vol_0_100, 0, 100) / 100.0)
 
-
 def stop_music():
     try:
         pygame.mixer.music.stop()
-    except Exception:
+    except:
         pass
-
 
 # ✅ 등급 배경음악: "한 번만 재생" (네가 준 참고 함수 방식)
 current_music_grade = None
-
 
 def play_music_for_grade(grade, music_path, volume_0_100):
     global current_music_grade
@@ -213,12 +196,10 @@ def play_music_for_grade(grade, music_path, volume_0_100):
 
     current_music_grade = grade
 
-
 # ✅ SFX(펜타/미리듣기): Channel로 재생 (music와 분리)
 # ✅ 재생 동안 배경음악 볼륨 1/2 덕킹 -> SFX 종료 후 복귀
 _ducking = False
 _base_music_volume_0_100 = 30
-
 
 def play_sfx_one_shot(path, volume_0_100, duck=True):
     global _ducking
@@ -242,11 +223,10 @@ def play_sfx_one_shot(path, volume_0_100, duck=True):
     # 기존 SFX 즉시 컷(원치 않으면 stop 제거)
     try:
         SFX_CHANNEL.stop()
-    except Exception:
+    except:
         pass
 
     SFX_CHANNEL.play(snd)
-
 
 def update_ducking(volume_0_100):
     """매 프레임 호출: SFX가 끝나면 배경음악 볼륨을 원상복귀"""
@@ -254,7 +234,6 @@ def update_ducking(volume_0_100):
     if _ducking and (not SFX_CHANNEL.get_busy()):
         _ducking = False
         set_music_volume(volume_0_100)
-
 
 # =============================
 # UI base
@@ -280,7 +259,6 @@ class UIElement:
 
     def draw(self, surf):
         pass
-
 
 # =============================
 # Button
@@ -329,19 +307,11 @@ class Button(UIElement):
     def draw(self, surf):
         draw_shadow_card(surf, self.rect, self.current_color, radius=10, shadow_alpha=70)
         if self.hover and self.enabled:
-            draw_round_rect(
-                surf, self.rect, self.current_color, radius=10, border=1, border_color=THEME.stroke
-            )
+            draw_round_rect(surf, self.rect, self.current_color, radius=10, border=1, border_color=THEME.stroke)
 
         label = FONT_14.render(self.text, True, THEME.text)
-        surf.blit(
-            label,
-            (
-                self.rect.centerx - label.get_width() // 2,
-                self.rect.centery - label.get_height() // 2,
-            ),
-        )
-
+        surf.blit(label, (self.rect.centerx - label.get_width() // 2,
+                          self.rect.centery - label.get_height() // 2))
 
 # =============================
 # Slider + clickable value input
@@ -399,7 +369,7 @@ class Slider(UIElement):
                 return
 
             if event.unicode.isdigit():
-                if len(self.edit_text) < 5:
+                if len(self.edit_text) < 3:
                     self.edit_text += event.unicode
 
     def _commit_edit(self):
@@ -407,7 +377,7 @@ class Slider(UIElement):
             return
         try:
             v = int(self.edit_text)
-        except Exception:
+        except:
             return
         v = int(clamp(v, self.vmin, self.vmax))
         self.value = v
@@ -435,17 +405,10 @@ class Slider(UIElement):
         self.value_rect = pygame.Rect(self.rect.right - box_w, self.rect.y - 2, box_w, box_h)
 
         box_color = lerp_color(THEME.card, THEME.accent, 0.18) if self.editing else THEME.card
-        draw_round_rect(
-            surf, self.value_rect, box_color, radius=8, border=1, border_color=THEME.stroke
-        )
+        draw_round_rect(surf, self.value_rect, box_color, radius=8, border=1, border_color=THEME.stroke)
 
-        surf.blit(
-            val,
-            (
-                self.value_rect.centerx - val.get_width() // 2,
-                self.value_rect.centery - val.get_height() // 2,
-            ),
-        )
+        surf.blit(val, (self.value_rect.centerx - val.get_width() // 2,
+                        self.value_rect.centery - val.get_height() // 2))
 
         track = pygame.Rect(self.rect.x, self.rect.y + 26, self.rect.w, 6)
         draw_round_rect(surf, track, THEME.stroke, radius=999)
@@ -460,9 +423,8 @@ class Slider(UIElement):
         pygame.draw.circle(surf, THEME.stroke, (hx, track.centery), 9, 1)
 
         if self.editing:
-            hint = FONT_12.render("값을 입력 후 Enter", True, THEME.subtext)
+            hint = FONT_12.render("0~100 입력 후 Enter", True, THEME.subtext)
             surf.blit(hint, (self.rect.x, self.rect.y + 52))
-
 
 # =============================
 # SoundSlotList
@@ -575,14 +537,7 @@ class SoundSlotList(UIElement):
             btn_play = pygame.Rect(card.right - (btn_w * 2 + gap) - 12, card.y + 14, btn_w, 36)
             btn_pick = pygame.Rect(card.right - btn_w - 12, card.y + 14, btn_w, 36)
 
-            draw_round_rect(
-                surf,
-                btn_play,
-                lerp_color(THEME.card, THEME.accent, 0.25),
-                radius=10,
-                border=1,
-                border_color=THEME.stroke,
-            )
+            draw_round_rect(surf, btn_play, lerp_color(THEME.card, THEME.accent, 0.25), radius=10, border=1, border_color=THEME.stroke)
             draw_round_rect(surf, btn_pick, THEME.card, radius=10, border=1, border_color=THEME.stroke)
 
             t1 = FONT_14.render("▶", True, THEME.text)
@@ -597,7 +552,6 @@ class SoundSlotList(UIElement):
             y += 74
 
         surf.set_clip(prev_clip)
-
 
 # =============================
 # PresetList
@@ -615,9 +569,7 @@ class PresetList(UIElement):
         os.makedirs("presets", exist_ok=True)
         files = [fn for fn in os.listdir("presets") if fn.lower().endswith(".json")]
         files.sort()
-        self.items = [
-            {"name": os.path.splitext(fn)[0], "path": os.path.join("presets", fn)} for fn in files
-        ]
+        self.items = [{"name": os.path.splitext(fn)[0], "path": os.path.join("presets", fn)} for fn in files]
         self.scroll_y = 0
         self.scroll_target = 0
         print("[PRESETS] found:", len(self.items))
@@ -692,17 +644,14 @@ class PresetList(UIElement):
 
         surf.set_clip(prev_clip)
 
-
 # =============================
-# Detection settings & helper
+# Detection thread (OpenCV + MSS)
 # =============================
 GRADE_ORDER = ["None", "E", "D", "C", "B", "A", "S"]
 GRADE_TO_IDX = {g: i for i, g in enumerate(GRADE_ORDER)}
 
-
 def idx_grade(g):
     return GRADE_TO_IDX.get(g, 0)
-
 
 TEMPLATES = {
     "S": [r"templates/S.png", r"templates/S(active).png"],
@@ -714,26 +663,11 @@ TEMPLATES = {
     "None": [r"templates/None.png", r"templates/None(cooltime).png"],
 }
 
-RESOLUTION_PRESETS = {
-    "3440x1440": {"label": "3440 x 1440", "anchor": (1720, 1335)},
-    "1920x1080": {"label": "1920 x 1080", "anchor": (990, 1001)},
-}
-
-DEFAULT_PRESET = "3440x1440"
-ANCHOR_X_MIN, ANCHOR_X_MAX = 0, 6000
-ANCHOR_Y_MIN, ANCHOR_Y_MAX = 0, 4000
-
+anchor_x, anchor_y = 1720, 1335
 ROI_W, ROI_H = 90, 90
-anchor_x, anchor_y = RESOLUTION_PRESETS[DEFAULT_PRESET]["anchor"]
-monitor = {"left": 0, "top": 0, "width": ROI_W, "height": ROI_H}
-
-
-def update_monitor_from_anchor():
-    monitor["left"] = anchor_x - ROI_W // 2
-    monitor["top"] = anchor_y - ROI_H // 2
-
-
-update_monitor_from_anchor()
+ROI_X = anchor_x - ROI_W // 2
+ROI_Y = anchor_y - ROI_H // 2
+monitor = {"left": ROI_X, "top": ROI_Y, "width": ROI_W, "height": ROI_H}
 
 tmpl_imgs = {g: [] for g in TEMPLATES.keys()}
 for grade, paths in TEMPLATES.items():
@@ -742,9 +676,6 @@ for grade, paths in TEMPLATES.items():
         if img is None:
             raise FileNotFoundError(f"템플릿 로드 실패: {grade} -> {path}")
         tmpl_imgs[grade].append(img)
-
-
-LIVE_URL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 
 def detect_grade_fn(roi_gray):
     best_grade = None
@@ -760,6 +691,7 @@ def detect_grade_fn(roi_gray):
                 best_grade = grade
     return best_grade, best_score
 
+LIVE_URL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
 
 def is_active_player_samira(timeout_sec=0.2):
     try:
@@ -785,18 +717,16 @@ def is_active_player_samira(timeout_sec=0.2):
             return False
 
         return False
-    except Exception:
+    except:
         return False
-
 
 def get_active_summoner_name(timeout_sec=0.2):
     """펜타 이벤트에서 '내가 한 킬인지' 판별용"""
     try:
         data = requests.get(LIVE_URL, verify=False, timeout=timeout_sec).json()
         return data.get("activePlayer", {}).get("summonerName", None)
-    except Exception:
+    except:
         return None
-
 
 class DetectionController:
     def __init__(self):
@@ -804,11 +734,9 @@ class DetectionController:
         self.debug_window = True
         self.lock = threading.Lock()
 
-
 det_ctl = DetectionController()
 
 event_q = queue.Queue()
-
 
 def detection_thread_main():
     score_threshold = 0.55
@@ -862,7 +790,7 @@ def detection_thread_main():
         if window_created:
             try:
                 cv2.destroyWindow(win_name)
-            except Exception:
+            except:
                 pass
             window_created = False
 
@@ -871,7 +799,6 @@ def detection_thread_main():
         ✅ 펜타 이벤트는 '내가 킬한 것'만 재생:
         Multikill 이벤트에서 KillerName(또는 유사 필드)이 activePlayer와 일치할 때만 큐에 넣음
         """
-
         nonlocal last_event_id, penta_played
         if penta_played:
             return
@@ -903,7 +830,7 @@ def detection_thread_main():
                         # 타인이 펜타한 것 -> 재생 X
                         pass
 
-        except Exception:
+        except:
             pass
 
     def reset_detection_state():
@@ -949,26 +876,10 @@ def detection_thread_main():
             if dbg_on:
                 ensure_window()
                 img = np.zeros((ROI_H * 3, ROI_W * 3, 3), dtype=np.uint8)
-                cv2.putText(
-                    img,
-                    "WAITING: Samira not active",
-                    (10, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (255, 255, 255),
-                    2,
-                    cv2.LINE_AA,
-                )
-                cv2.putText(
-                    img,
-                    "Detection paused (no screen grab)",
-                    (10, 85),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (180, 180, 180),
-                    2,
-                    cv2.LINE_AA,
-                )
+                cv2.putText(img, "WAITING: Samira not active", (10, 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(img, "Detection paused (no screen grab)", (10, 85),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (180, 180, 180), 2, cv2.LINE_AA)
                 cv2.imshow(win_name, img)
                 cv2.waitKey(1)
             else:
@@ -996,7 +907,6 @@ def detection_thread_main():
             f"raw={raw_grade} score={raw_score:.3f}",
             f"cand={candidate_grade} ({candidate_count}/{confirm_frames})",
             f"stable={last_stable_grade}",
-            f"anchor=({anchor_x},{anchor_y})",
         ]
 
         if candidate_count >= confirm_frames:
@@ -1064,9 +974,7 @@ def detection_thread_main():
                             drop_candidate = proposed
                             drop_count = 1
 
-                        info_lines.append(
-                            f"DROP? {drop_candidate} ({drop_count}/{drop_confirm_frames}) dist={dist_down}"
-                        )
+                        info_lines.append(f"DROP? {drop_candidate} ({drop_count}/{drop_confirm_frames}) dist={dist_down}")
 
                         if drop_count >= drop_confirm_frames:
                             last_stable_grade = proposed
@@ -1106,16 +1014,8 @@ def detection_thread_main():
             debug = cv2.resize(frame_bgr, (ROI_W * 3, ROI_H * 3), interpolation=cv2.INTER_NEAREST)
             y = 28
             for line in info_lines:
-                cv2.putText(
-                    debug,
-                    line,
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.65,
-                    (255, 255, 255),
-                    2,
-                    cv2.LINE_AA,
-                )
+                cv2.putText(debug, line, (10, y),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
                 y += 26
             cv2.imshow(win_name, debug)
             cv2.waitKey(1)
@@ -1126,24 +1026,19 @@ def detection_thread_main():
 
     try:
         cv2.destroyAllWindows()
-    except Exception:
+    except:
         pass
-
 
 # =============================
 # State + config
 # =============================
 state = {
     "volume": 30,
-    "mode": None,  # None / "samira" / "penta" / "preset"
+    "mode": None,            # None / "samira" / "penta" / "preset"
     "last_preset": None,
     "debug_window": True,
     "samira_active": False,
-    "anchor_x": anchor_x,
-    "anchor_y": anchor_y,
-    "anchor_preset": DEFAULT_PRESET,
 }
-
 
 def set_volume(v):
     global _base_music_volume_0_100
@@ -1152,30 +1047,6 @@ def set_volume(v):
     # 덕킹 중이면 반영하지 않고, 덕킹 해제 시 복귀
     if not _ducking:
         set_music_volume(state["volume"])
-
-
-def set_anchor_point(ax, ay, preset_name=None):
-    global anchor_x, anchor_y
-    anchor_x = int(clamp(ax, ANCHOR_X_MIN, ANCHOR_X_MAX))
-    anchor_y = int(clamp(ay, ANCHOR_Y_MIN, ANCHOR_Y_MAX))
-    state["anchor_x"] = anchor_x
-    state["anchor_y"] = anchor_y
-    state["anchor_preset"] = preset_name if preset_name else "custom"
-    update_monitor_from_anchor()
-    print(f"[ANCHOR] set to ({anchor_x}, {anchor_y}) preset={state['anchor_preset']}")
-
-
-def apply_anchor_preset(key):
-    preset = RESOLUTION_PRESETS.get(key)
-    if not preset:
-        return
-    ax, ay = preset["anchor"]
-    set_anchor_point(ax, ay, preset_name=key)
-    if "sld_anchor_x" in globals():
-        sld_anchor_x.value = state["anchor_x"]
-    if "sld_anchor_y" in globals():
-        sld_anchor_y.value = state["anchor_y"]
-
 
 samira_slots = [
     {"title": "S", "path": ""},
@@ -1189,21 +1060,14 @@ penta_slots = [
     {"title": "Pentakill", "path": ""},
 ]
 
-
 def export_tool_config():
     return {
-        "version": 3,
+        "version": 2,
         "volume": state["volume"],
         "debug_window": state["debug_window"],
-        "anchor": {
-            "x": state["anchor_x"],
-            "y": state["anchor_y"],
-            "preset": state.get("anchor_preset"),
-        },
         "samira": [{"title": s["title"], "path": s.get("path", "")} for s in samira_slots],
         "penta": [{"title": s["title"], "path": s.get("path", "")} for s in penta_slots],
     }
-
 
 def apply_tool_config(data):
     if not isinstance(data, dict):
@@ -1220,16 +1084,6 @@ def apply_tool_config(data):
         state["debug_window"] = dbg
         with det_ctl.lock:
             det_ctl.debug_window = dbg
-
-    anchor_data = data.get("anchor", {})
-    if isinstance(anchor_data, dict):
-        ax = anchor_data.get("x", state["anchor_x"])
-        ay = anchor_data.get("y", state["anchor_y"])
-        preset_name = anchor_data.get("preset", None)
-        if isinstance(ax, (int, float)) and isinstance(ay, (int, float)):
-            set_anchor_point(int(ax), int(ay), preset_name=preset_name)
-            sld_anchor_x.value = state["anchor_x"]
-            sld_anchor_y.value = state["anchor_y"]
 
     s_list = data.get("samira", [])
     if isinstance(s_list, list) and len(s_list) > 0:
@@ -1250,19 +1104,17 @@ def apply_tool_config(data):
     elif state["mode"] == "penta":
         slot_list.set_slots(penta_slots, header_title="PENTAKILL")
 
-
 def apply_preset_data(data, preset_name=None):
     apply_tool_config(data)
     state["last_preset"] = preset_name
     print("[APPLY PRESET]", preset_name)
-
 
 # =============================
 # Layout
 # =============================
 def build_layout(w, h):
     margin = 20
-    bottom_h = 220
+    bottom_h = 110
     sidebar_w = 280
 
     top_area = pygame.Rect(margin, margin, w - margin * 2, h - margin * 2 - bottom_h)
@@ -1271,25 +1123,25 @@ def build_layout(w, h):
         top_area.x,
         top_area.y,
         top_area.w - sidebar_w - 16,
-        top_area.h,
+        top_area.h
     )
 
     sidebar_rect = pygame.Rect(
         canvas_rect.right + 16,
         top_area.y,
         sidebar_w,
-        top_area.h,
+        top_area.h
     )
 
     bottom_rect = pygame.Rect(
         margin,
         top_area.bottom + 16,
         w - margin * 2,
-        bottom_h - 16,
+        bottom_h - 16
     )
 
     btn_samira = pygame.Rect(sidebar_rect.x + 20, sidebar_rect.y + 70, sidebar_rect.w - 40, 46)
-    btn_penta = pygame.Rect(sidebar_rect.x + 20, sidebar_rect.y + 130, sidebar_rect.w - 40, 46)
+    btn_penta  = pygame.Rect(sidebar_rect.x + 20, sidebar_rect.y + 130, sidebar_rect.w - 40, 46)
 
     btn_h = 42
     gap = 10
@@ -1302,101 +1154,39 @@ def build_layout(w, h):
     btn_presets = pygame.Rect(bx, btn_save.y - gap - btn_h, bw, btn_h)
     btn_dbg = pygame.Rect(bx, btn_presets.y - gap - btn_h, bw, btn_h)
 
-    sld_volume_rect = pygame.Rect(bottom_rect.x + 20, bottom_rect.y + 18, bottom_rect.w - 40, 50)
-    sld_anchor_x_rect = pygame.Rect(
-        bottom_rect.x + 20, bottom_rect.y + 76, bottom_rect.w - 40, 50
-    )
-    sld_anchor_y_rect = pygame.Rect(
-        bottom_rect.x + 20, bottom_rect.y + 134, bottom_rect.w - 40, 50
-    )
+    sld = pygame.Rect(bottom_rect.x + 20, bottom_rect.y + 18, bottom_rect.w - 40, 50)
 
-    btn_res1 = pygame.Rect(bottom_rect.x + 20, bottom_rect.bottom - 58, 200, 40)
-    btn_res2 = pygame.Rect(btn_res1.right + 12, bottom_rect.bottom - 58, 200, 40)
-
-    return (
-        canvas_rect,
-        sidebar_rect,
-        bottom_rect,
-        btn_samira,
-        btn_penta,
-        btn_dbg,
-        btn_presets,
-        btn_save,
-        btn_load,
-        sld_volume_rect,
-        sld_anchor_x_rect,
-        sld_anchor_y_rect,
-        btn_res1,
-        btn_res2,
-    )
-
+    return canvas_rect, sidebar_rect, bottom_rect, btn_samira, btn_penta, btn_dbg, btn_presets, btn_save, btn_load, sld
 
 # =============================
 # UI create
 # =============================
-(
-    canvas_rect,
-    sidebar_rect,
-    bottom_rect,
-    r_samira,
-    r_penta,
-    r_dbg,
-    r_presets,
-    r_save,
-    r_load,
-    r_sld,
-    r_ax,
-    r_ay,
-    r_res1,
-    r_res2,
-) = build_layout(W, H)
-
+canvas_rect, sidebar_rect, bottom_rect, r_samira, r_penta, r_dbg, r_presets, r_save, r_load, r_sld = build_layout(W, H)
 
 def on_slot_play(slot):
     # ✅ 미리듣기: SFX 채널 + 덕킹
     play_sfx_one_shot(slot.get("path", ""), state["volume"], duck=True)
 
-
 slot_list = SoundSlotList(canvas_rect, get_volume_func=lambda: state["volume"], on_play_click=on_slot_play)
 preset_list = PresetList(canvas_rect, apply_preset_func=apply_preset_data)
-
-
-# Anchor 핸들러
-
-def on_anchor_x_change(v):
-    set_anchor_point(v, state["anchor_y"], preset_name="custom")
-
-
-def on_anchor_y_change(v):
-    set_anchor_point(state["anchor_x"], v, preset_name="custom")
-
-
-sld_volume = Slider(r_sld, "Volume", 0, 100, state["volume"], on_change=set_volume)
-sld_anchor_x = Slider(r_ax, "Anchor X", ANCHOR_X_MIN, ANCHOR_X_MAX, state["anchor_x"], on_change=on_anchor_x_change)
-sld_anchor_y = Slider(r_ay, "Anchor Y", ANCHOR_Y_MIN, ANCHOR_Y_MAX, state["anchor_y"], on_change=on_anchor_y_change)
-
 
 def open_samira():
     state["mode"] = "samira"
     slot_list.set_slots(samira_slots, header_title="SAMIRA (S~E)")
 
-
 def open_penta():
     state["mode"] = "penta"
     slot_list.set_slots(penta_slots, header_title="PENTAKILL")
 
-
 def open_presets():
     state["mode"] = "preset"
     preset_list.reload()
-
 
 def save_tool_json():
     path = pick_json_save_path(default_name="tool_config.json")
     if not path:
         return
     safe_write_json(path, export_tool_config())
-
 
 def load_tool_json():
     path = pick_json_open_path(title="툴 설정 JSON 불러오기")
@@ -1408,47 +1198,23 @@ def load_tool_json():
         state["last_preset"] = None
         print("[LOAD CONFIG]", path)
 
-
 def toggle_debug_window():
     state["debug_window"] = not state["debug_window"]
     with det_ctl.lock:
         det_ctl.debug_window = state["debug_window"]
 
-
-def choose_res1():
-    apply_anchor_preset("3440x1440")
-
-
-def choose_res2():
-    apply_anchor_preset("1920x1080")
-
-
 btn_open_samira = Button(r_samira, "사미라 스타일 사운드(S ~ E)", on_click=open_samira)
-btn_open_penta = Button(r_penta, "펜타킬 사운드", on_click=open_penta)
-btn_debug = Button(r_dbg, "감지 창 ON/OFF", on_click=toggle_debug_window)
-btn_open_presets = Button(r_presets, "프리셋", on_click=open_presets)
-btn_save = Button(r_save, "저장", on_click=save_tool_json)
-btn_load = Button(r_load, "불러오기", on_click=load_tool_json)
-btn_res1 = Button(r_res1, "3440 x 1440 앵커 적용", on_click=choose_res1)
-btn_res2 = Button(r_res2, "1920 x 1080 앵커 적용", on_click=choose_res2)
+btn_open_penta  = Button(r_penta,  "펜타킬 사운드", on_click=open_penta)
+btn_debug       = Button(r_dbg,    "감지 창 ON/OFF", on_click=toggle_debug_window)
+btn_open_presets= Button(r_presets,"프리셋", on_click=open_presets)
+btn_save        = Button(r_save,   "저장", on_click=save_tool_json)
+btn_load        = Button(r_load,   "불러오기", on_click=load_tool_json)
 
-ui = [
-    btn_open_samira,
-    btn_open_penta,
-    btn_debug,
-    btn_open_presets,
-    btn_save,
-    btn_load,
-    btn_res1,
-    btn_res2,
-    sld_volume,
-    sld_anchor_x,
-    sld_anchor_y,
-]
+sld_volume = Slider(r_sld, "Volume", 0, 100, state["volume"], on_change=set_volume)
+ui = [btn_open_samira, btn_open_penta, btn_debug, btn_open_presets, btn_save, btn_load, sld_volume]
 
-# 시작 볼륨/앵커 적용
+# 시작 볼륨 적용
 set_music_volume(state["volume"])
-set_anchor_point(state["anchor_x"], state["anchor_y"], preset_name=DEFAULT_PRESET)
 
 # =============================
 # Start detection thread
@@ -1465,9 +1231,8 @@ grade_to_slot_index = {
     "B": 2,
     "C": 3,
     "D": 4,
-    "E": 5,
+    "E": 5
 }
-
 
 def handle_detection_events():
     global current_music_grade
@@ -1488,14 +1253,7 @@ def handle_detection_events():
 
         elif typ == "GRADE":
             g = payload
-            print(
-                "[GRADE EVENT]",
-                g,
-                "current_music=",
-                current_music_grade,
-                "samira_active=",
-                state["samira_active"],
-            )
+            print("[GRADE EVENT]", g, "current_music=", current_music_grade, "samira_active=", state["samira_active"])
 
             if not state["samira_active"]:
                 continue
@@ -1529,7 +1287,6 @@ def handle_detection_events():
             else:
                 print("[WARN] penta path missing:", path)
 
-
 # =============================
 # Main loop
 # =============================
@@ -1551,22 +1308,7 @@ while running:
             W, H = event.w, event.h
             screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
 
-            (
-                canvas_rect,
-                sidebar_rect,
-                bottom_rect,
-                r_samira,
-                r_penta,
-                r_dbg,
-                r_presets,
-                r_save,
-                r_load,
-                r_sld,
-                r_ax,
-                r_ay,
-                r_res1,
-                r_res2,
-            ) = build_layout(W, H)
+            canvas_rect, sidebar_rect, bottom_rect, r_samira, r_penta, r_dbg, r_presets, r_save, r_load, r_sld = build_layout(W, H)
 
             btn_open_samira.set_rect(r_samira)
             btn_open_penta.set_rect(r_penta)
@@ -1574,12 +1316,7 @@ while running:
             btn_open_presets.set_rect(r_presets)
             btn_save.set_rect(r_save)
             btn_load.set_rect(r_load)
-            btn_res1.set_rect(r_res1)
-            btn_res2.set_rect(r_res2)
-
             sld_volume.set_rect(r_sld)
-            sld_anchor_x.set_rect(r_ax)
-            sld_anchor_y.set_rect(r_ay)
 
             slot_list.set_rect(canvas_rect)
             preset_list.set_rect(canvas_rect)
@@ -1632,21 +1369,10 @@ while running:
 
     draw_shadow_card(screen, bottom_rect, THEME.panel, radius=16, shadow_alpha=90)
     sld_volume.draw(screen)
-    sld_anchor_x.draw(screen)
-    sld_anchor_y.draw(screen)
-
-    btn_res1.draw(screen)
-    btn_res2.draw(screen)
-
-    anchor_label = f"Anchor: ({state['anchor_x']}, {state['anchor_y']})"
-    preset_label = state.get("anchor_preset") or "custom"
-    preset_disp = f"해상도 프리셋: {preset_label}"
-    anchor_info = FONT_12.render(f"{anchor_label} / {preset_disp}", True, THEME.subtext)
-    screen.blit(anchor_info, (bottom_rect.x + 20, bottom_rect.bottom - 112))
 
     if state["last_preset"]:
         info = FONT_12.render(f"Preset: {state['last_preset']}", True, THEME.subtext)
-        screen.blit(info, (bottom_rect.x + 20, bottom_rect.bottom - 92))
+        screen.blit(info, (bottom_rect.x + 20, bottom_rect.y + 72))
 
     pygame.display.flip()
 
@@ -1656,7 +1382,7 @@ with det_ctl.lock:
 stop_music()
 try:
     SFX_CHANNEL.stop()
-except Exception:
+except:
     pass
 
 pygame.mixer.quit()
