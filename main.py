@@ -767,6 +767,7 @@ anchor_select = None
 ROI_W_BASE, ROI_H_BASE = 90, 90
 ROI_W, ROI_H = ROI_W_BASE, ROI_H_BASE
 TEMPLATE_BASE_RESOLUTION = (3440, 1440)
+TEMPLATE_SCALE_OFFSETS = [0.97, 1.0, 1.03]
 
 def compute_monitor(ax, ay):
     rx = int(ax - ROI_W // 2)
@@ -786,19 +787,31 @@ for grade, paths in TEMPLATES.items():
 tmpl_imgs = {}
 
 
-def rebuild_templates(scale_factor):
+def _scale_candidates(base_scale):
+    seen = set()
+    for off in TEMPLATE_SCALE_OFFSETS:
+        candidate = base_scale * off
+        key = round(candidate, 4)
+        if key in seen:
+            continue
+        seen.add(key)
+        yield candidate
+
+
+def rebuild_templates(base_scale):
     global tmpl_imgs
     new_tmpls = {}
     for grade, tmpls in tmpl_imgs_base.items():
         scaled_list = []
         for tmpl in tmpls:
-            if scale_factor != 1.0:
-                new_w = max(1, int(round(tmpl.shape[1] * scale_factor)))
-                new_h = max(1, int(round(tmpl.shape[0] * scale_factor)))
-                scaled = cv2.resize(tmpl, (new_w, new_h), interpolation=cv2.INTER_AREA)
-            else:
-                scaled = tmpl
-            scaled_list.append(scaled)
+            for scale_factor in _scale_candidates(base_scale):
+                if scale_factor != 1.0:
+                    new_w = max(1, int(round(tmpl.shape[1] * scale_factor)))
+                    new_h = max(1, int(round(tmpl.shape[0] * scale_factor)))
+                    scaled = cv2.resize(tmpl, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                else:
+                    scaled = tmpl
+                scaled_list.append(scaled)
         new_tmpls[grade] = scaled_list
 
     tmpl_imgs = new_tmpls
@@ -812,6 +825,7 @@ def resolution_scale(resolution):
         rw, rh = resolution
         bw, bh = TEMPLATE_BASE_RESOLUTION
         if bh > 0:
+            # UI 스케일을 높이 기준으로 정렬 (기본 해상도 3440x1440)
             return max(0.2, rh / bh)
     except Exception:
         pass
