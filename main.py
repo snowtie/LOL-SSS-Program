@@ -487,10 +487,14 @@ class Select(UIElement):
         self.option_rects = []
         if self.opened and self.options:
             opt_y = box_rect.bottom + 6
+            total_h = len(self.options) * box_h + (len(self.options) - 1) * 6
+            bg_rect = pygame.Rect(box_rect.x, opt_y, box_rect.w, total_h)
+            draw_round_rect(surf, bg_rect, THEME.panel, radius=10, border=1, border_color=THEME.stroke)
+
             for i, opt in enumerate(self.options):
                 orect = pygame.Rect(box_rect.x, opt_y, box_rect.w, box_h)
                 bg = lerp_color(THEME.card, THEME.accent, 0.12) if i == self.selected else THEME.card
-                draw_round_rect(surf, orect, bg, radius=10, border=1, border_color=THEME.stroke)
+                draw_round_rect(surf, orect, bg, radius=8, border=0, border_color=THEME.stroke)
                 t = FONT_14.render(opt, True, THEME.text)
                 surf.blit(t, (orect.x + 12, orect.centery - t.get_height() // 2))
                 self.option_rects.append(orect)
