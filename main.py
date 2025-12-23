@@ -438,6 +438,9 @@ class Select(UIElement):
         self.selected = 0
         self.opened = False
         self.option_rects = []
+        self.dropdown_rect = None
+        self.scroll_y = 0
+        self.max_drop_h = 180
 
     def set_index(self, idx):
         if len(self.options) == 0:
@@ -451,6 +454,15 @@ class Select(UIElement):
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.opened = False
+            return
+
+        if self.opened and event.type == pygame.MOUSEWHEEL:
+            mx, my = pygame.mouse.get_pos()
+            if self.dropdown_rect and self.dropdown_rect.collidepoint((mx, my)):
+                total_h = len(self.options) * (self.rect.h - 20) + max(0, len(self.options) - 1) * 6
+                visible_h = min(total_h, self.max_drop_h)
+                max_scroll = max(0, total_h - visible_h)
+                self.scroll_y = clamp(self.scroll_y + (-event.y) * 30, 0, max_scroll)
             return
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -487,14 +499,26 @@ class Select(UIElement):
         self.option_rects = []
         if self.opened and self.options:
             opt_y = box_rect.bottom + 6
+            total_h = len(self.options) * box_h + (len(self.options) - 1) * 6
+            view_h = min(total_h, self.max_drop_h)
+            self.scroll_y = clamp(self.scroll_y, 0, max(0, total_h - view_h))
+
+            self.dropdown_rect = pygame.Rect(box_rect.x, opt_y, box_rect.w, view_h)
+            draw_round_rect(surf, self.dropdown_rect, THEME.panel, radius=10, border=1, border_color=THEME.stroke)
+
+            prev_clip = surf.get_clip()
+            surf.set_clip(self.dropdown_rect)
+
             for i, opt in enumerate(self.options):
-                orect = pygame.Rect(box_rect.x, opt_y, box_rect.w, box_h)
+                orect = pygame.Rect(box_rect.x, opt_y - int(self.scroll_y), box_rect.w, box_h)
                 bg = lerp_color(THEME.card, THEME.accent, 0.12) if i == self.selected else THEME.card
-                draw_round_rect(surf, orect, bg, radius=10, border=1, border_color=THEME.stroke)
+                draw_round_rect(surf, orect, bg, radius=8, border=0, border_color=THEME.stroke)
                 t = FONT_14.render(opt, True, THEME.text)
                 surf.blit(t, (orect.x + 12, orect.centery - t.get_height() // 2))
                 self.option_rects.append(orect)
                 opt_y += box_h + 6
+
+            surf.set_clip(prev_clip)
 
 # =============================
 # SoundSlotList
