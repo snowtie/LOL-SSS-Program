@@ -430,17 +430,18 @@ class Slider(UIElement):
 # Select box
 # =============================
 class Select(UIElement):
-    def __init__(self, rect, label, options, on_change=None):
+    def __init__(self, rect, label, options, on_change=None, max_drop_h=180, highlight_mix=0.12):
         super().__init__(rect)
         self.label = label
         self.options = options
         self.on_change = on_change
+        self.max_drop_h = max_drop_h
+        self.highlight_mix = highlight_mix
         self.selected = 0
         self.opened = False
         self.option_rects = []
         self.dropdown_rect = None
         self.scroll_y = 0
-        self.max_drop_h = 180
 
     def set_index(self, idx):
         if len(self.options) == 0:
@@ -511,7 +512,7 @@ class Select(UIElement):
 
             for i, opt in enumerate(self.options):
                 orect = pygame.Rect(box_rect.x, opt_y - int(self.scroll_y), box_rect.w, box_h)
-                bg = lerp_color(THEME.card, THEME.accent, 0.12) if i == self.selected else THEME.card
+                bg = lerp_color(THEME.card, THEME.accent, self.highlight_mix) if i == self.selected else THEME.card
                 draw_round_rect(surf, orect, bg, radius=8, border=0, border_color=THEME.stroke)
                 t = FONT_14.render(opt, True, THEME.text)
                 surf.blit(t, (orect.x + 12, orect.centery - t.get_height() // 2))
@@ -1425,7 +1426,14 @@ btn_load        = Button(r_load,   "불러오기", on_click=load_tool_json)
 def on_anchor_changed(idx):
     set_anchor_index(idx, update_ui=False)
 
-anchor_select = Select(r_anchor, "앵커(해상도)", [p["label"] for p in anchor_presets], on_change=on_anchor_changed)
+anchor_select = Select(
+    r_anchor,
+    "앵커(해상도)",
+    [p["label"] for p in anchor_presets],
+    on_change=on_anchor_changed,
+    max_drop_h=320,
+    highlight_mix=1.0,
+)
 anchor_select.set_index(state["anchor_index"])
 set_anchor_index(state["anchor_index"], update_ui=False)
 sld_volume = Slider(r_sld, "Volume", 0, 100, state["volume"], on_change=set_volume)
